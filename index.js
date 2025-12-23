@@ -66,5 +66,3 @@ app.delete('/api/vehicles/:id', async (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`\n🚀 FleetSync Server running on port ${PORT}`));
-
-// update-1

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-// Use Vercel Environment Variable, or fallback to local for development
+// Link to your Render backend
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function App() {
@@ -10,7 +10,7 @@ function App() {
   const [type, setType] = useState('HGV');
   const [motDate, setMotDate] = useState('');
 
-  // Styles defined as objects to force them into the HTML
+  // FORCED STYLES FOR INPUTS
   const inputStyle = {
     color: '#000000',
     backgroundColor: '#ffffff',
@@ -18,7 +18,9 @@ function App() {
     padding: '10px',
     fontSize: '16px',
     borderRadius: '4px',
-    marginRight: '5px'
+    marginRight: '5px',
+    colorScheme: 'light', // Forces the calendar icon and text to stay black/light
+    WebkitTextFillColor: '#000000' // Fixes iOS specific white text bug
   };
 
   const buttonStyle = {
@@ -31,14 +33,14 @@ function App() {
     borderRadius: '4px'
   };
 
-  // 1. LOAD DATA
+  // 1. LOAD DATA FROM RENDER/SUPABASE
   useEffect(() => {
     fetch(`${API_URL}/api/vehicles`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setVehicles(data);
       })
-      .catch(err => console.error("Error loading vehicles:", err));
+      .catch(err => console.error("Connection Error:", err));
   }, []);
 
   // 2. ADD VEHICLE
@@ -59,7 +61,7 @@ function App() {
       setVehicles([...vehicles, newVehicle]);
       setReg(''); setMake(''); setMotDate('');
     } catch (err) {
-      alert("Failed to add vehicle. Check Console for CORS errors.");
+      alert("Error adding vehicle. Check Render Logs.");
     }
   };
 
@@ -70,7 +72,7 @@ function App() {
     setVehicles(vehicles.filter(v => v.id !== id));
   };
 
-  // 4. TOGGLE STATUS
+  // 4. TOGGLE VOR STATUS
   const toggleStatus = async (id, currentStatus) => {
     const newStatus = currentStatus === 'On Road' ? 'VOR' : 'On Road';
     const response = await fetch(`${API_URL}/api/vehicles/${id}`, {
@@ -84,6 +86,19 @@ function App() {
 
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#f4f4f4', minHeight: '100vh', color: '#333' }}>
+      
+      {/* GLOBAL OVERRIDE: This kills the white text issue on all browsers */}
+      <style>{`
+        input, select, option, input[type="date"] {
+          color: #000000 !important;
+          background-color: #ffffff !important;
+          -webkit-text-fill-color: #000000 !important;
+          opacity: 1 !important;
+          color-scheme: light !important;
+        }
+        h1, h3, th, td { color: #333 !important; }
+      `}</style>
+
       <h1>🚛 FleetSync Pro</h1>
 
       <div style={{ background: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
@@ -97,17 +112,13 @@ function App() {
             style={inputStyle} 
           />
           <input 
-            placeholder="MAKE" 
+            placeholder="MAKE (e.g. DAF)" 
             value={make} 
             onChange={e => setMake(e.target.value)} 
             required 
             style={inputStyle} 
           />
-          <select 
-            value={type} 
-            onChange={e => setType(e.target.value)} 
-            style={inputStyle}
-          >
+          <select value={type} onChange={e => setType(e.target.value)} style={inputStyle}>
             <option value="HGV">HGV</option>
             <option value="Van">Van</option>
             <option value="Trailer">Trailer</option>
