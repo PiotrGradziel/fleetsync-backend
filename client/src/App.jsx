@@ -10,6 +10,27 @@ function App() {
   const [type, setType] = useState('HGV');
   const [motDate, setMotDate] = useState('');
 
+  // Styles defined as objects to force them into the HTML
+  const inputStyle = {
+    color: '#000000',
+    backgroundColor: '#ffffff',
+    border: '2px solid #333',
+    padding: '10px',
+    fontSize: '16px',
+    borderRadius: '4px',
+    marginRight: '5px'
+  };
+
+  const buttonStyle = {
+    padding: '10px 20px',
+    background: '#2ecc71',
+    color: 'white',
+    border: 'none',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    borderRadius: '4px'
+  };
+
   // 1. LOAD DATA
   useEffect(() => {
     fetch(`${API_URL}/api/vehicles`)
@@ -44,7 +65,7 @@ function App() {
 
   // 3. DELETE VEHICLE
   const handleDelete = async (id) => {
-    if(!confirm("Remove this vehicle from fleet?")) return;
+    if(!confirm("Remove this vehicle?")) return;
     await fetch(`${API_URL}/api/vehicles/${id}`, { method: 'DELETE' });
     setVehicles(vehicles.filter(v => v.id !== id));
   };
@@ -61,87 +82,82 @@ function App() {
     setVehicles(vehicles.map(v => (v.id === id ? updatedVehicle : v)));
   };
 
-  const getMotStyle = (expiryDate) => {
-    if (!expiryDate) return {};
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    if (expiry < today) return { color: '#ff4d4d', fontWeight: 'bold' };
-    return {};
-  };
-
   return (
-    <div className="dashboard-container">
-      {/* NUCLEAR CSS OVERRIDE: Forces black text and visible inputs */}
-      <style>{`
-        input, select, option {
-          color: #000000 !important;
-          background-color: #ffffff !important;
-          border: 2px solid #61dafb !important;
-          padding: 10px !important;
-          font-size: 16px !important;
-        }
-        ::placeholder {
-          color: #888888 !important;
-        }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #444; }
-        .status-badge { padding: 5px 10px; border-radius: 4px; font-weight: bold; }
-        .status-green { background: #2ecc71; color: white; }
-        .status-red { background: #e74c3c; color: white; }
-      `}</style>
+    <div style={{ padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#f4f4f4', minHeight: '100vh', color: '#333' }}>
+      <h1>🚛 FleetSync Pro</h1>
 
-      <h1>🚛 FleetSync Pro Dashboard</h1>
+      <div style={{ background: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <h3>Add New Vehicle</h3>
+        <form onSubmit={handleAdd} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <input 
+            placeholder="REG NUMBER" 
+            value={reg} 
+            onChange={e => setReg(e.target.value)} 
+            required 
+            style={inputStyle} 
+          />
+          <input 
+            placeholder="MAKE" 
+            value={make} 
+            onChange={e => setMake(e.target.value)} 
+            required 
+            style={inputStyle} 
+          />
+          <select 
+            value={type} 
+            onChange={e => setType(e.target.value)} 
+            style={inputStyle}
+          >
+            <option value="HGV">HGV</option>
+            <option value="Van">Van</option>
+            <option value="Trailer">Trailer</option>
+          </select>
+          <input 
+            type="date" 
+            value={motDate} 
+            onChange={e => setMotDate(e.target.value)} 
+            required 
+            style={inputStyle} 
+          />
+          <button type="submit" style={buttonStyle}>ADD VEHICLE</button>
+        </form>
+      </div>
 
-      <form onSubmit={handleAdd} style={{ marginBottom: '30px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        <input placeholder="REG NUMBER" value={reg} onChange={e => setReg(e.target.value)} required />
-        <input placeholder="MAKE (e.g. DAF)" value={make} onChange={e => setMake(e.target.value)} required />
-        <select value={type} onChange={e => setType(e.target.value)}>
-          <option>HGV</option>
-          <option>Van</option>
-          <option>Trailer</option>
-        </select>
-        <input type="date" value={motDate} onChange={e => setMotDate(e.target.value)} required />
-        <button type="submit" style={{ padding: '10px 20px', background: '#61dafb', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
-          ADD VEHICLE
-        </button>
-      </form>
-
-      <table>
-        <thead>
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: '8px', overflow: 'hidden' }}>
+        <thead style={{ background: '#333', color: 'white' }}>
           <tr>
-            <th>Reg Number</th>
-            <th>Make</th>
-            <th>Type</th>
-            <th>MOT Expiry</th>
-            <th>Status</th>
-            <th>Actions</th>
+            <th style={{ padding: '12px', textAlign: 'left' }}>Reg</th>
+            <th style={{ padding: '12px', textAlign: 'left' }}>Make</th>
+            <th style={{ padding: '12px', textAlign: 'left' }}>Type</th>
+            <th style={{ padding: '12px', textAlign: 'left' }}>MOT Expiry</th>
+            <th style={{ padding: '12px', textAlign: 'left' }}>Status</th>
+            <th style={{ padding: '12px', textAlign: 'left' }}>Action</th>
           </tr>
         </thead>
         <tbody>
-          {vehicles.map((vehicle) => (
-            <tr key={vehicle.id}>
-              <td><strong>{vehicle.reg_number}</strong></td>
-              <td>{vehicle.make}</td>
-              <td>{vehicle.type}</td>
-              <td style={getMotStyle(vehicle.mot_expiry)}>
-                {vehicle.mot_expiry || 'N/A'} {getMotStyle(vehicle.mot_expiry).color && ' ⚠️'}
-              </td>
-              <td>
-                <span 
-                  onClick={() => toggleStatus(vehicle.id, vehicle.status)} 
-                  className={`status-badge ${vehicle.status === 'VOR' ? 'status-red' : 'status-green'}`} 
-                  style={{ cursor: 'pointer' }}
-                >
-                  {vehicle.status}
-                </span>
-              </td>
-              <td>
+          {vehicles.map((v) => (
+            <tr key={v.id} style={{ borderBottom: '1px solid #ddd' }}>
+              <td style={{ padding: '12px' }}><strong>{v.reg_number}</strong></td>
+              <td style={{ padding: '12px' }}>{v.make}</td>
+              <td style={{ padding: '12px' }}>{v.type}</td>
+              <td style={{ padding: '12px' }}>{v.mot_expiry}</td>
+              <td style={{ padding: '12px' }}>
                 <button 
-                  onClick={() => handleDelete(vehicle.id)} 
-                  style={{ background: 'transparent', border: '1px solid #ff4d4d', color: '#ff4d4d', cursor: 'pointer', padding: '5px' }}
+                  onClick={() => toggleStatus(v.id, v.status)}
+                  style={{ 
+                    padding: '5px 10px', 
+                    borderRadius: '4px', 
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: v.status === 'VOR' ? '#e74c3c' : '#2ecc71',
+                    color: 'white'
+                  }}
                 >
-                  Delete
+                  {v.status}
                 </button>
+              </td>
+              <td style={{ padding: '12px' }}>
+                <button onClick={() => handleDelete(v.id)} style={{ color: '#e74c3c', border: 'none', background: 'none', cursor: 'pointer' }}>Delete</button>
               </td>
             </tr>
           ))}
