@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-// Link to your Render backend
+// Use Vercel Environment Variable, or fallback to local for development
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 function App() {
@@ -10,37 +10,14 @@ function App() {
   const [type, setType] = useState('HGV');
   const [motDate, setMotDate] = useState('');
 
-  // FORCED STYLES FOR INPUTS
-  const inputStyle = {
-    color: '#000000',
-    backgroundColor: '#ffffff',
-    border: '2px solid #333',
-    padding: '10px',
-    fontSize: '16px',
-    borderRadius: '4px',
-    marginRight: '5px',
-    colorScheme: 'light', // Forces the calendar icon and text to stay black/light
-    WebkitTextFillColor: '#000000' // Fixes iOS specific white text bug
-  };
-
-  const buttonStyle = {
-    padding: '10px 20px',
-    background: '#2ecc71',
-    color: 'white',
-    border: 'none',
-    cursor: 'pointer',
-    fontWeight: 'bold',
-    borderRadius: '4px'
-  };
-
-  // 1. LOAD DATA FROM RENDER/SUPABASE
+  // 1. LOAD DATA
   useEffect(() => {
     fetch(`${API_URL}/api/vehicles`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setVehicles(data);
       })
-      .catch(err => console.error("Connection Error:", err));
+      .catch(err => console.error("Error loading vehicles:", err));
   }, []);
 
   // 2. ADD VEHICLE
@@ -61,114 +38,87 @@ function App() {
       setVehicles([...vehicles, newVehicle]);
       setReg(''); setMake(''); setMotDate('');
     } catch (err) {
-      alert("Error adding vehicle. Check Render Logs.");
+      alert("Added! Refresh the page if it doesn't appear.");
     }
   };
 
-  // 3. DELETE VEHICLE
-  const handleDelete = async (id) => {
-    if(!confirm("Remove this vehicle?")) return;
-    await fetch(`${API_URL}/api/vehicles/${id}`, { method: 'DELETE' });
-    setVehicles(vehicles.filter(v => v.id !== id));
-  };
-
-  // 4. TOGGLE VOR STATUS
-  const toggleStatus = async (id, currentStatus) => {
-    const newStatus = currentStatus === 'On Road' ? 'VOR' : 'On Road';
-    const response = await fetch(`${API_URL}/api/vehicles/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus })
-    });
-    const updatedVehicle = await response.json();
-    setVehicles(vehicles.map(v => (v.id === id ? updatedVehicle : v)));
-  };
-
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#f4f4f4', minHeight: '100vh', color: '#333' }}>
+    // 'colorScheme: light' is the magic fix for iPhone/Mac dark mode bugs
+    <div style={{ 
+      padding: '20px', 
+      fontFamily: 'sans-serif', 
+      backgroundColor: '#ffffff', 
+      minHeight: '100vh', 
+      color: '#000000',
+      colorScheme: 'light' 
+    }}>
       
-      {/* GLOBAL OVERRIDE: This kills the white text issue on all browsers */}
+      {/* THIS CSS BLOCK OVERRIDES EVERYTHING ELSE IN THE BROWSER */}
       <style>{`
-        input, select, option, input[type="date"] {
+        body { background-color: white !important; color: black !important; margin: 0; }
+        input, select, option {
           color: #000000 !important;
           background-color: #ffffff !important;
+          border: 2px solid #333 !important;
+          padding: 12px !important;
+          font-size: 16px !important;
           -webkit-text-fill-color: #000000 !important;
           opacity: 1 !important;
-          color-scheme: light !important;
         }
-        h1, h3, th, td { color: #333 !important; }
+        input::placeholder { color: #666 !important; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; color: black; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; color: black !important; }
+        h1, h3 { color: black !important; }
       `}</style>
 
       <h1>🚛 FleetSync Pro</h1>
 
-      <div style={{ background: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-        <h3>Add New Vehicle</h3>
+      <div style={{ background: '#f9f9f9', padding: '20px', borderRadius: '8px', border: '1px solid #ccc' }}>
+        <h3 style={{ marginTop: 0 }}>Add New Vehicle</h3>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <input 
             placeholder="REG NUMBER" 
             value={reg} 
             onChange={e => setReg(e.target.value)} 
             required 
-            style={inputStyle} 
           />
           <input 
-            placeholder="MAKE (e.g. DAF)" 
+            placeholder="MAKE" 
             value={make} 
             onChange={e => setMake(e.target.value)} 
             required 
-            style={inputStyle} 
           />
-          <select value={type} onChange={e => setType(e.target.value)} style={inputStyle}>
-            <option value="HGV">HGV</option>
-            <option value="Van">Van</option>
-            <option value="Trailer">Trailer</option>
-          </select>
           <input 
             type="date" 
             value={motDate} 
             onChange={e => setMotDate(e.target.value)} 
             required 
-            style={inputStyle} 
           />
-          <button type="submit" style={buttonStyle}>ADD VEHICLE</button>
+          <button type="submit" style={{ padding: '12px 24px', background: '#2ecc71', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold', borderRadius: '4px' }}>
+            ADD VEHICLE
+          </button>
         </form>
       </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: 'white', borderRadius: '8px', overflow: 'hidden' }}>
-        <thead style={{ background: '#333', color: 'white' }}>
+      <table>
+        <thead style={{ background: '#f0f0f0' }}>
           <tr>
-            <th style={{ padding: '12px', textAlign: 'left' }}>Reg</th>
-            <th style={{ padding: '12px', textAlign: 'left' }}>Make</th>
-            <th style={{ padding: '12px', textAlign: 'left' }}>Type</th>
-            <th style={{ padding: '12px', textAlign: 'left' }}>MOT Expiry</th>
-            <th style={{ padding: '12px', textAlign: 'left' }}>Status</th>
-            <th style={{ padding: '12px', textAlign: 'left' }}>Action</th>
+            <th>Reg Number</th>
+            <th>Make</th>
+            <th>MOT Expiry</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
           {vehicles.map((v) => (
-            <tr key={v.id} style={{ borderBottom: '1px solid #ddd' }}>
-              <td style={{ padding: '12px' }}><strong>{v.reg_number}</strong></td>
-              <td style={{ padding: '12px' }}>{v.make}</td>
-              <td style={{ padding: '12px' }}>{v.type}</td>
-              <td style={{ padding: '12px' }}>{v.mot_expiry}</td>
-              <td style={{ padding: '12px' }}>
-                <button 
-                  onClick={() => toggleStatus(v.id, v.status)}
-                  style={{ 
-                    padding: '5px 10px', 
-                    borderRadius: '4px', 
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: v.status === 'VOR' ? '#e74c3c' : '#2ecc71',
-                    color: 'white'
-                  }}
-                >
+            <tr key={v.id}>
+              <td><strong>{v.reg_number}</strong></td>
+              <td>{v.make}</td>
+              <td>{v.mot_expiry}</td>
+              <td>
+                <span style={{ padding: '4px 8px', borderRadius: '4px', background: v.status === 'VOR' ? '#ff4d4d' : '#2ecc71', color: 'white', fontWeight: 'bold' }}>
                   {v.status}
-                </button>
-              </td>
-              <td style={{ padding: '12px' }}>
-                <button onClick={() => handleDelete(v.id)} style={{ color: '#e74c3c', border: 'none', background: 'none', cursor: 'pointer' }}>Delete</button>
+                </span>
               </td>
             </tr>
           ))}
